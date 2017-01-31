@@ -3,16 +3,31 @@ function Write-Cyan($str) {
     Write-Host -ForegroundColor Cyan -NoNewLine $str
 }
 
+$script:progress = 0
+
+function step($step) {
+  $script:progress = $script:progress + 12.5
+  Write-Progress -Activity "Reading" -Percent $script:progress -Status $step
+}
+
+step "OS"
 $osInstance = Get-CimInstance Win32_OperatingSystem
 $os = $osInstance.Caption
+step "Uptime"
 $uptime = New-TimeSpan -Start $osInstance.LastBootUpTime
+step "CPU"
 $cpu = (Get-WmiObject Win32_Processor).Name
+step "GPU"
 $gpuInstance = Get-WmiObject Win32_VideoController
 $gpu = $gpuInstance.Caption
 $resolution = $gpuInstance.VideoModeDescription
+step "OSVersion"
 $kernel = [System.Environment]::OSVersion.VersionString
-$packages = ((Get-WmiObject Win32_Product) | Measure-Object).Count
+step "Packages"
+$packages = (dir hklm:\SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall | Measure).Count
+step "PS"
 $shell = "PowerShell $($PSVersionTable.PSVersion.ToString())"
+step "Memory"
 $totalRam = [Math]::Round((Get-WmiObject Win32_ComputerSystem).TotalPhysicalMemory / 1MB)
 $freeRam = (Get-Counter -Counter "\Memory\Available MBytes").Readings.Split("`r`n")[1]
 $usedRam = [Math]::Round($totalRam-$freeRam)
